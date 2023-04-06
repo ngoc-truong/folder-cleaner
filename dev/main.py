@@ -5,15 +5,24 @@ class File:
     def __init__(self, name: str, path: str):
         self.__name = name 
         self.__path = path
+        self.__directory = self.get_directory()
         self.__date = self.get_date()
         self.__extension = self.get_extension()
 
     def __str__(self):
-        return f"Filename: {self.__name} \nFilepath: {self.__path}\nCreation date: {self.__date}\nExtension: {self.__extension}\n"
+        return f"Filename: {self.__name} \nFilepath: {self.__path}\nDirectory: {self.__directory}\nCreation date: {self.__date}\nExtension: {self.__extension}\n"
 
     @property
     def name(self):
         return self.__name 
+    
+    @property
+    def extension(self):
+        return self.__extension
+    
+    @property 
+    def date(self):
+        return self.__date
     
     @name.setter
     def name(self, new_name: str):
@@ -24,16 +33,34 @@ class File:
         date = datetime.utcfromtimestamp(unix_date).strftime("%y%m%d")
         return date
     
+    def get_directory(self):
+        index = self.__path.rfind("/")
+        directory = self.__path[:index + 1]
+        return directory
+    
     def get_extension(self):
         index = self.__name.rfind(".")
         extension = self.__name[index + 1:]
         return extension
+    
+    def add_date_to_filename(self):
+        old_file = self.__path
+        new_file = self.__directory + self.__date + "_" + self.__name
+        length = len(self.__date)
+
+        if not self.__name[:length].isdigit():
+            os.rename(old_file, new_file)
+        else:
+            print("Filename already contains the date in YYMMDD-format. Nothing was changed.")
 
 
 class FileHandler:
     def __init__(self, path: str):
         self.__path = path
-        self.__files = []
+        self.__files = self.get_files()
+        ignored_extensions = ["DS_Store", "localized"]
+        self.__extensions = {file.extension for file in self.__files if file.extension not in ignored_extensions}
+        self.__dates = {file.date[:4] for file in self.__files}
 
     def __iter__(self):
         self.n = 0
@@ -53,18 +80,31 @@ class FileHandler:
 
     def get_files(self):
         contents = os.listdir(self.__path)
+        files = []
 
         for file in contents:
             filepath = os.path.join(self.__path, file)
             if os.path.isfile(filepath):
                 file_object = File(file, filepath)
-                self.__files.append(file_object)
+                files.append(file_object)
+
+        return files
+
+    def create_folders(self, type: str):
+        types = {"extension": self.__extensions, "date": self.__dates}
+
+        for folder_name in types[type]:
+            new_path = self.__path + folder_name
+            if not os.path.exists(new_path):
+                os.makedirs(new_path)
+                print(f"Yeah, I created the folder '{new_path}', sir.")
+            else:
+                print(f"Sorry, the folder '{new_path}' already exists.")
+
 
 
 if __name__ == "__main__":
     path = "/Users/ntruong/Downloads/"
     file_handler = FileHandler(path)
-    file_handler.get_files()
-
-    for file in file_handler:
-        print(file)
+    file_handler.create_folders("extension")
+    
