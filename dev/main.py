@@ -17,12 +17,16 @@ class File:
         return self.__name 
     
     @property
-    def extension(self):
-        return self.__extension
+    def path(self):
+        return self.__path
     
     @property 
     def date(self):
         return self.__date
+    
+    @property
+    def extension(self):
+        return self.__extension
     
     @name.setter
     def name(self, new_name: str):
@@ -52,6 +56,15 @@ class File:
             os.rename(old_file, new_file)
         else:
             print("Filename already contains the date in YYMMDD-format. Nothing was changed.")
+
+    def move_to(self, folder_type: str):
+        types = {"extension": self.__extension, "date": self.__date[:4]}
+        old_path = self.__path 
+        new_path = self.__directory + types[folder_type]
+        new_path_with_file = self.__directory + types[folder_type] + "/" + self.__name
+
+        if os.path.isdir(new_path):
+            os.replace(old_path, new_path_with_file)
 
 
 class FileHandler:
@@ -101,10 +114,22 @@ class FileHandler:
             else:
                 print(f"Sorry, the folder '{new_path}' already exists.")
 
+    def move_files_to(self, folder_type: str):
+        for file in self.__files:
+            file.move_to(folder_type)
+
+    def add_date_to_filenames(self):
+        for file in self.__files:
+            file.add_date_to_filename()
 
 
 if __name__ == "__main__":
     path = "/Users/ntruong/Downloads/"
     file_handler = FileHandler(path)
-    file_handler.create_folders("extension")
-    
+    file_handler.create_folders("date")
+    file_handler.move_files_to("date")
+
+
+# TODO:
+# - If a file has already a date at the beginning replace it with "YYMMDD_"
+# - Reformat description of a file to CamelCase
